@@ -101,8 +101,8 @@ bump across every consumer on each shared-action change. The shared flatpak
 tooling is guarded instead by the
 [Flatpak Tooling Drift Check](.github/workflows/flatpak-tooling-drift-check.yml).
 
-This is a required review item and is backed by an automated workflow-action
-pinning check in CI (#255). It closes the root cause behind sec-check finding
+This is a required review item and will be backed by an automated workflow-action
+pinning check in CI (tracked in #255). It closes the root cause behind sec-check finding
 [tuna-os/.github#175](https://github.com/tuna-os/.github/issues/175) — "no
 enforced standard or CI check requiring commit SHA pinning" — while the per-repo
 action pinning it tracks is filed separately as
