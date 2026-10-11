@@ -115,8 +115,14 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     violations = []
-    for path in find_workflow_files(args.directory):
-        violations.extend(check_file(path))
+    for entry in find_workflow_files(args.directory):
+        if isinstance(entry, str):
+            # find_workflow_files reports an unreadable/missing directory as a
+            # bare string, not a Path; record it as a violation rather than
+            # letting check_file() crash trying to read_text() it.
+            violations.append(entry)
+        else:
+            violations.extend(check_file(entry))
 
     if args.json:
         print(json.dumps({"violations": violations}))

@@ -157,6 +157,16 @@ class TestMain(unittest.TestCase):
         self.assertEqual(rc, 1)
         self.assertEqual(buf.getvalue(), "")
 
+    def test_missing_directory_is_a_clean_violation(self):
+        # Regression: main() used to crash with a traceback when the scanned
+        # directory did not exist, because find_workflow_files() returns a bare
+        # string for that case and check_file() tried to read_text() it. The
+        # directory must surface as a normal violation with exit code 1.
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = check.main([str(Path("/no/such/dir/here"))])
+        self.assertEqual(rc, 1)
+        self.assertIn("no such directory", buf.getvalue())
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
