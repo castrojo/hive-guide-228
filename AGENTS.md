@@ -91,6 +91,9 @@ automerge major and minor updates once `packageRules` are layered
 `project-starter/scripts/check-renovate-automerge-policy.py` are byte-identical
 copies today, with nothing enforcing that.
 
+For the reusable workflows these checks operate on — what each input does, its
+defaults, and how a repo calls one — see [`docs/WORKFLOWS.md`](docs/WORKFLOWS.md).
+
 ## Workflow permissions check
 
 ```bash
