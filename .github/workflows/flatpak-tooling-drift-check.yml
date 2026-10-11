@@ -13,6 +13,16 @@ name: Flatpak Tooling Drift Check
 #
 # "Missing" is never treated as "migrated" on its own: a repo that moved or
 # dropped the file without adopting the shared tooling fails the check.
+#
+# Status (see tuna-os/.github#292): this check has been red on every scheduled
+# run since 2026-08-17 — the last green run was a manual `workflow_dispatch` on
+# 2026-08-14. It fails because one or more repos in the list below still carry a
+# local `update-index.py` that has drifted from canonical (tuna-os/flatpak-index)
+# instead of migrating onto the shared publish-flatpak tooling. Coverage is the
+# list itself: it is not exhaustive of every repo that ever carried a copy, and
+# it must be kept current as repos publish a flatpak or adopt the shared tooling.
+# The fix is per-repo migration (delete the copy, use the shared tooling), not
+# re-syncing the copy.
 
 on:
   schedule:
