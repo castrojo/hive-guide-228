@@ -12,17 +12,14 @@ inputs:
   criteria-path:
     description: Path to green-criteria.yml
     required: false
-    type: string
     default: ".github/green-criteria.yml"
   workflows-dir:
     description: Directory containing workflow YAML files
     required: false
-    type: string
     default: ".github/workflows"
   python-version:
     description: Python version to use
     required: false
-    type: string
     default: "3.11"
 
 runs:
@@ -42,4 +39,4 @@ runs:
       env:
         CRITERIA_PATH: ${{ inputs.criteria-path }}
         WORKFLOWS_DIR: ${{ inputs.workflows-dir }}
-      run: python3 ${{ github.action_path }}/../scripts/ci_contract.py
+      run: python3 "$GITHUB_ACTION_PATH/../../scripts/ci_contract.py"

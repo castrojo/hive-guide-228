@@ -13,12 +13,10 @@ inputs:
   workflows-dir:
     description: Directory containing workflow YAML files
     required: false
-    type: string
     default: ".github/workflows"
   python-version:
     description: Python version to use
     required: false
-    type: string
     default: "3.11"
 
 runs:
@@ -37,4 +35,4 @@ runs:
       shell: bash
       env:
         WORKFLOWS_DIR: ${{ inputs.workflows-dir }}
-      run: python3 ${{ github.action_path }}/../scripts/fork_safety.py
+      run: python3 "$GITHUB_ACTION_PATH/../../scripts/fork_safety.py"
