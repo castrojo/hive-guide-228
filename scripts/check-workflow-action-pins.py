@@ -63,17 +63,26 @@ def _extract_ref(value):
     return REF_RE.search(value).group("ref")
 
 
-def check_uses_value(value):
-    """Return a violation string for one `uses:` value, or None if pinned."""
-    ref = _extract_ref(_strip_inline_comment(value))
+def check_uses_value(value, self_repo=None):
+    """Return a violation string for one `uses:` value, or None if pinned.
+
+    A reference into `self_repo` (the repository being checked, e.g.
+    `tuna-os/.github/.github/actions/ste-lint@main` inside tuna-os/.github) is
+    exempt: it resolves to the same tree whose workflows are being run, so a
+    SHA pin adds no trust boundary and only lets the reference go stale.
+    """
+    value = _strip_inline_comment(value)
+    ref = _extract_ref(value)
     if ref is None:
         return None
     if SHA_RE.match(ref):
         return None
-    return f"uses reference `{value}` is pinned to mutable ref `@{ref}` -- use a 40-character commit SHA"
+    if self_repo and value.strip().lower().startswith(self_repo.lower() + "/"):
+        return None
+    return f"uses reference `{value.strip()}` is pinned to mutable ref `@{ref}` -- use a 40-character commit SHA"
 
 
-def check_line(line):
+def check_line(line, self_repo=None):
     """Return a violation string for one workflow line, or None."""
     # Skip comment lines outright; a `uses:` inside a comment is not a real ref.
     if line.lstrip().startswith("#"):
@@ -81,14 +90,14 @@ def check_line(line):
     match = USES_RE.match(line)
     if match is None:
         return None
-    return check_uses_value(match.group("value"))
+    return check_uses_value(match.group("value"), self_repo)
 
 
-def check_file(path):
+def check_file(path, self_repo=None):
     """Return a list of violation strings for one workflow file."""
     violations = []
     for line in path.read_text(encoding="utf-8").splitlines():
-        violation = check_line(line)
+        violation = check_line(line, self_repo)
         if violation is not None:
             violations.append(violation)
     return violations
@@ -96,11 +105,7 @@ def check_file(path):
 
 def find_workflow_files(directory):
     """Return the .yml and .yaml files directly inside `directory`, sorted."""
-    if not directory.is_dir():
-        return [f"{directory}: no such directory"]
-
-    files = sorted(list(directory.glob("*.yml")) + list(directory.glob("*.yaml")))
-    return files
+    return sorted(list(directory.glob("*.yml")) + list(directory.glob("*.yaml")))
 
 
 def main(argv=None):
@@ -122,11 +127,20 @@ def main(argv=None):
         action="store_true",
         help="Emit no output; exit code alone reports the result.",
     )
+    parser.add_argument(
+        "--self-repo",
+        metavar="OWNER/REPO",
+        help="Exempt references into this repository (the one being checked).",
+    )
     args = parser.parse_args(argv)
+
+    if not args.directory.is_dir():
+        print(f"{args.directory}: no such directory", file=sys.stderr)
+        return 2
 
     violations = []
     for path in find_workflow_files(args.directory):
-        violations.extend(check_file(path))
+        violations.extend(check_file(path, args.self_repo))
 
     if args.json:
         print(json.dumps({"violations": violations}))

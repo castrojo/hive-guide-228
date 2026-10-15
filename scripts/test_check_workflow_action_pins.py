@@ -74,6 +74,21 @@ class TestCheckUsesValue(unittest.TestCase):
     def test_sha_with_inline_comment_is_compliant(self):
         self.assertIsNone(check.check_uses_value(f"actions/checkout@{SHA} # v7"))
 
+    def test_self_repo_ref_is_exempt(self):
+        self.assertIsNone(
+            check.check_uses_value(
+                "tuna-os/.github/.github/actions/ste-lint@main", self_repo="tuna-os/.github"
+            )
+        )
+
+    def test_other_repo_ref_still_flagged_with_self_repo(self):
+        self.assertIn(
+            "@main",
+            check.check_uses_value(
+                "tuna-os/.github-extra/.github/actions/x@main", self_repo="tuna-os/.github"
+            ),
+        )
+
 
 class TestCheckLine(unittest.TestCase):
     def test_list_item_uses(self):
@@ -125,6 +140,13 @@ class TestMain(unittest.TestCase):
     def test_exit_one_when_unpinned(self):
         d = self._write_dir(**{"ci.yml": "uses: foo/bar@main\n"})
         self.assertEqual(check.main([d]), 1)
+
+    def test_self_repo_flag_exempts_own_refs(self):
+        d = self._write_dir(**{"ci.yml": "uses: tuna-os/.github/.github/actions/ste-lint@main\n"})
+        self.assertEqual(check.main([d, "--quiet", "--self-repo", "tuna-os/.github"]), 0)
+
+    def test_missing_directory_exits_two(self):
+        self.assertEqual(check.main(["/nonexistent/workflows-dir", "--quiet"]), 2)
 
     def test_json_output(self):
         d = self._write_dir(**{"ci.yml": "uses: foo/bar@main\n"})
