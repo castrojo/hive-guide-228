@@ -108,8 +108,8 @@ scope, not just the answers.
 
 This table is kept fresh by an automated workflow, not a manual pass. The
 `roadmap-index-automation` workflow in `.github/workflows/` runs
-`scripts/roadmap-index.py --check` on a weekly schedule and opens a pull
-request whenever the live count no longer matches this file. It is the
+`scripts/roadmap-index.py --write` on a weekly schedule and opens a pull
+request whenever the regenerated table differs from this file. It is the
 implementation of the "proposed next step" from the September 2 pass
 (tunaos#1295).
 

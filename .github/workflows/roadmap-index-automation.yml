@@ -11,10 +11,11 @@ on:
   workflow_dispatch: {}
 
 # Scheduled runs have no PR context, so this is `schedule` (never
-# `pull_request_target` — tunaOS forbids it). The job pushes and opens a PR, so
-# it needs write access to the repository contents.
+# `pull_request_target` — tunaOS forbids it). The job pushes a branch and opens
+# a PR, so it needs contents and pull-requests write.
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: roadmap-index-refresh
@@ -22,7 +23,7 @@ concurrency:
 
 jobs:
   refresh:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -32,19 +33,15 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Check the inventory against live data
-        id: check
-        run: |
-          set -euo pipefail
-          if python3 scripts/roadmap-index.py --check; then
-            echo "The ROADMAP-INDEX table is up to date."
-            echo "drift=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "drift=true" >> "$GITHUB_OUTPUT"
-          fi
+      # Exits non-zero only on a real error (gh failure, empty repo list), so a
+      # broken run fails loudly instead of being mistaken for drift. In-sync
+      # runs leave the tree clean and create-pull-request does nothing.
+      - name: Regenerate the inventory from live data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/roadmap-index.py --write
 
-      - name: Refresh the table and open a PR on drift
-        if: steps.check.outputs.drift == 'true'
+      - name: Open a PR on drift
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           branch: roadmap-index/refresh
@@ -54,7 +51,7 @@ jobs:
           body: |
             Automated refresh of the org-wide ROADMAP inventory (tunaos#1295).
 
-            `scripts/roadmap-index.py --check` detected drift between the
+            `scripts/roadmap-index.py --write` detected drift between the
             committed `ROADMAP-INDEX.md` table and the live active-repo set.
             This PR rewrites the count, the "Last verified" date, and the
             table body; the surrounding prose is left untouched.
